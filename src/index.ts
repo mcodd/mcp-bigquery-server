@@ -10,7 +10,8 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { BigQuery } from '@google-cloud/bigquery';
 
-import { promises as fs } from 'fs';
+import { promises as fs, constants as fsConstants } from 'fs';
+import path from 'path';
 
 // Define configuration interface
 interface ServerConfig {
@@ -22,10 +23,25 @@ interface ServerConfig {
 async function validateConfig(config: ServerConfig): Promise<void> {
   // Check if key file exists and is readable
   if (config.keyFilename) {
+    const resolvedKeyPath = path.resolve(config.keyFilename);
     try {
-      await fs.access(config.keyFilename, fs.constants.R_OK);
+      await fs.access(resolvedKeyPath, fsConstants.R_OK);
+      // Update the config to use the resolved path
+      config.keyFilename = resolvedKeyPath;
     } catch (error) {
-      throw new Error(`Service account key file not accessible: ${config.keyFilename}`);
+      console.error('File access error details:', error);
+      if (error instanceof Error) {
+        const nodeError = error as NodeJS.ErrnoException;
+        if (nodeError.code === 'EACCES') {
+          throw new Error(`Permission denied accessing key file: ${resolvedKeyPath}. Please check file permissions.`);
+        } else if (nodeError.code === 'ENOENT') {
+          throw new Error(`Key file not found: ${resolvedKeyPath}. Please verify the file path.`);
+        } else {
+          throw new Error(`Unable to access key file: ${resolvedKeyPath}. Error: ${nodeError.message}`);
+        }
+      } else {
+        throw new Error(`Unexpected error accessing key file: ${resolvedKeyPath}`);
+      }
     }
 
     // Validate file contents
@@ -51,8 +67,20 @@ async function validateConfig(config: ServerConfig): Promise<void> {
   }
 
   // Validate location if provided
-  if (config.location && !/^[a-z]+-[a-z]+\d+$/.test(config.location)) {
-    throw new Error('Invalid location format');
+  const validLocations = [
+    'EU', 'US', // Multi-regional locations
+    'us-central1', 'us-east1', 'us-east4', 'us-west1', 'us-west2', 'us-west3', 'us-west4',
+    'northamerica-northeast1', 'northamerica-northeast2',
+    'europe-west1', 'europe-west2', 'europe-west3', 'europe-west4', 'europe-west6',
+    'europe-north1', 'europe-central2',
+    'asia-east1', 'asia-east2', 'asia-northeast1', 'asia-northeast2', 'asia-northeast3',
+    'asia-south1', 'asia-south2', 'asia-southeast1', 'asia-southeast2',
+    'australia-southeast1', 'australia-southeast2',
+    'southamerica-east1', 'southamerica-west1'
+  ];
+  
+  if (config.location && !validLocations.includes(config.location)) {
+    throw new Error(`Invalid location. Must be one of: ${validLocations.join(', ')}`);
   }
 }
 
@@ -60,7 +88,7 @@ function parseArgs(): ServerConfig {
   const args = process.argv.slice(2);
   const config: ServerConfig = {
     projectId: '',
-    location: 'us-central1' // Default location
+    location: 'EU' // Default to EU multi-region since it's a common location
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -114,24 +142,34 @@ const server = new Server(
   },
 );
 
-const config = parseArgs();
-console.error(`Initializing BigQuery with project ID: ${config.projectId} and location: ${config.location}`);
+let config: ServerConfig;
+let bigquery: BigQuery;
+let resourceBaseUrl: URL;
 
-const bigqueryConfig: {
-  projectId: string;
-  keyFilename?: string;
-} = {
-  projectId: config.projectId
-};
-
-if (config.keyFilename) {
-  console.error(`Using service account key file: ${config.keyFilename}`);
-  bigqueryConfig.keyFilename = config.keyFilename;
+try {
+  config = parseArgs();
+  await validateConfig(config);
+  
+  console.error(`Initializing BigQuery with project ID: ${config.projectId} and location: ${config.location}`);
+  
+  const bigqueryConfig: {
+    projectId: string;
+    keyFilename?: string;
+  } = {
+    projectId: config.projectId
+  };
+  
+  if (config.keyFilename) {
+    console.error(`Using service account key file: ${config.keyFilename}`);
+    bigqueryConfig.keyFilename = config.keyFilename;
+  }
+  
+  bigquery = new BigQuery(bigqueryConfig);
+  resourceBaseUrl = new URL(`bigquery://${config.projectId}`);
+} catch (error) {
+  console.error('Initialization error:', error);
+  process.exit(1);
 }
-
-const bigquery = new BigQuery(bigqueryConfig);
-
-const resourceBaseUrl = new URL(`bigquery://${config.projectId}`);
 
 const SCHEMA_PATH = "schema";
 
@@ -264,21 +302,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
 async function runServer() {
   try {
-    const config = parseArgs();
-    await validateConfig(config);
-    
-    console.error(`Initializing BigQuery with project ID: ${config.projectId} and location: ${config.location}`);
-    if (config.keyFilename) {
-      console.error(`Using service account key file: ${config.keyFilename}`);
-    }
-
-    const bigquery = new BigQuery({
-      projectId: config.projectId,
-      keyFilename: config.keyFilename
-    });
-
     const transport = new StdioServerTransport();
     await server.connect(transport);
+    console.error('BigQuery MCP server running on stdio');
   } catch (error: unknown) {
     if (error instanceof Error) {
       console.error('Error:', error.message);
