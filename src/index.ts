@@ -65,30 +65,13 @@ async function validateConfig(config: ServerConfig): Promise<void> {
   if (!/^[a-z0-9-]+$/.test(config.projectId)) {
     throw new Error('Invalid project ID format');
   }
-
-  // Validate location if provided
-  const validLocations = [
-    'EU', 'US', // Multi-regional locations
-    'us-central1', 'us-east1', 'us-east4', 'us-west1', 'us-west2', 'us-west3', 'us-west4',
-    'northamerica-northeast1', 'northamerica-northeast2',
-    'europe-west1', 'europe-west2', 'europe-west3', 'europe-west4', 'europe-west6',
-    'europe-north1', 'europe-central2',
-    'asia-east1', 'asia-east2', 'asia-northeast1', 'asia-northeast2', 'asia-northeast3',
-    'asia-south1', 'asia-south2', 'asia-southeast1', 'asia-southeast2',
-    'australia-southeast1', 'australia-southeast2',
-    'southamerica-east1', 'southamerica-west1'
-  ];
-  
-  if (config.location && !validLocations.includes(config.location)) {
-    throw new Error(`Invalid location. Must be one of: ${validLocations.join(', ')}`);
-  }
 }
 
 function parseArgs(): ServerConfig {
   const args = process.argv.slice(2);
   const config: ServerConfig = {
     projectId: '',
-    location: 'EU' // Default to EU multi-region since it's a common location
+    location: 'US' 
   };
 
   for (let i = 0; i < args.length; i++) {
