@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2025-04-03
+
+### Fixed
+
+- Removed circular dependency in package.json that caused version resolution issues
+- Fixed location format handling to properly support multi-region formats like "US"
+- Improved error handling for different location format specifications
+- Default region set to "EU"
+
 ## [1.0.0] - 2024-12-13
 
 ### Breaking Changes
@@ -47,5 +56,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added @google-cloud/bigquery: ^7.3.0
 - Added development dependencies: shx and typescript
 
+[1.0.3]: <https://github.com/ergut/mcp-bigquery-server/compare/v1.0.0...v1.0.3>
 [1.0.0]: https://github.com/ergut/mcp-bigquery-server/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/ergut/mcp-bigquery-server/releases/tag/v0.1.0
