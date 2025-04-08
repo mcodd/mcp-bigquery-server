@@ -70,10 +70,13 @@ async function validateConfig(config: ServerConfig): Promise<void> {
 function parseArgs(): ServerConfig {
   const args = process.argv.slice(2);
   const config: ServerConfig = {
-    projectId: '',
-    location: 'US' 
+    // Read from environment variables first, with defaults
+    projectId: process.env.MCP_BIGQUERY_PROJECT_ID || '',
+    location: process.env.MCP_BIGQUERY_LOCATION || 'US',
+    keyFilename: process.env.MCP_BIGQUERY_KEY_FILE,
   };
 
+  // Parse command-line arguments, potentially overriding environment variables
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (!arg.startsWith('--')) {
@@ -104,7 +107,7 @@ function parseArgs(): ServerConfig {
 
   if (!config.projectId) {
     throw new Error(
-      "Missing required argument: --project-id\n" +
+      "Missing required configuration: --project-id argument or MCP_BIGQUERY_PROJECT_ID environment variable must be set.\n" +
       "Usage: mcp-server-bigquery --project-id <project-id> [--location <location>] [--key-file <path-to-key-file>]"
     );
   }
