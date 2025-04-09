@@ -18,44 +18,16 @@ This fork allows configuration via environment variables as an alternative to co
 | `MCP_BIGQUERY_LOCATION`     | `--location`           | No                    | `US`                 |
 | `MCP_BIGQUERY_KEY_FILE`     | `--key-file`           | No (but usually needed) | -                    |
 
-## Running with Docker
+## Running a Docker MCP client in Claude Desktop
 
 **1. Prerequisites:**
 
-*   Docker installed and running.
-*   A Google Cloud Platform (GCP) project with the BigQuery API enabled.
-*   A GCP Service Account key file (`.json`) with permissions to access your BigQuery datasets (e.g., BigQuery Data Viewer, BigQuery User roles).
+*   Claude Desktop
+*   Docker Desktop
 
-**2. Pull the Image:**
+**2. Running the Container under Claude Desktop:**
 
-Pull the latest image from the registry:
-
-```bash
-docker pull mcodd/mcp-bigquery-server:latest
-```
-
-**3. Run the Container:**
-
-Run the container interactively, setting the required environment variables and mounting your service account key file.
-
-```bash
-docker run -it --rm \
-  -e MCP_BIGQUERY_PROJECT_ID="your-gcp-project-id" \
-  -e MCP_BIGQUERY_LOCATION="your-bigquery-location" \ # Optional, defaults to US
-  -e MCP_BIGQUERY_KEY_FILE="/app/key.json" \
-  -v /path/on/your/host/to/key.json:/app/key.json:ro \
-  mcodd/mcp-bigquery-server:latest
-```
-
-**Notes:**
-*   Ensure the path used in `-v ...` points to your actual key file on your host machine.
-*   The path in `-e MCP_BIGQUERY_KEY_FILE` must match the target path inside the container specified in the `-v` flag (e.g., `/app/key.json`).
-
-**4. Stopping the Container:**
-
-Press `Ctrl+D` in the terminal where the container is running to gracefully shut down the server.
-
-**5. Running the Container under Claude Desktop:**
+Start up Docker Desktop, which is necessary to be able to execute the docker commands in the `claude_desktop_config.json` file below.
 
 To use this server with Claude Desktop, you need to configure it in your `claude_desktop_config.json` file. Add an entry under `mcpServers` like the following, ensuring you replace the placeholder values:
 
@@ -96,6 +68,12 @@ To use this server with Claude Desktop, you need to configure it in your `claude
 *   **Internal Key File Path (`env` variable):** The value for `MCP_BIGQUERY_KEY_FILE` in the `env` section must exactly match the target path inside the container (the part after the colon in the `-v` argument), which is `/app/key.json` in this example.
 *   **Project ID (`env` variable):** Replace `"gbif-data-if-i-can-get-it"` with your actual GCP project ID.
 *   **`-i` vs `-it`:** The `-t` (allocate pseudo-TTY) flag is generally not needed when Claude Desktop runs the container, so `-i` (interactive, keep STDIN open) is sufficient.
+
+**3. Confirming it works:**
+Enter the following prompt and Claude will ask you for permission to use the MCP to retrieve the dataset schema:
+```
+Can you query GBIF database and get me schema for the occurrence table? It's called bigquery-public-data.gbif.occurrences
+```
 
 ## Development
 
