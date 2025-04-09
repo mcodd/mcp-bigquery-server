@@ -18,44 +18,16 @@ This fork allows configuration via environment variables as an alternative to co
 | `MCP_BIGQUERY_LOCATION`     | `--location`           | No                    | `US`                 |
 | `MCP_BIGQUERY_KEY_FILE`     | `--key-file`           | No (but usually needed) | -                    |
 
-## Running with Docker
+## Running a Docker MCP client in Claude Desktop
 
 **1. Prerequisites:**
 
-*   Docker installed and running.
-*   A Google Cloud Platform (GCP) project with the BigQuery API enabled.
-*   A GCP Service Account key file (`.json`) with permissions to access your BigQuery datasets (e.g., BigQuery Data Viewer, BigQuery User roles).
+*   Claude Desktop
+*   Docker Desktop
 
-**2. Pull the Image:**
+**2. Running the Container under Claude Desktop:**
 
-Pull the latest image from the registry:
-
-```bash
-docker pull mcodd/mcp-bigquery-server:latest
-```
-
-**3. Run the Container:**
-
-Run the container interactively, setting the required environment variables and mounting your service account key file.
-
-```bash
-docker run -it --rm \
-  -e MCP_BIGQUERY_PROJECT_ID="your-gcp-project-id" \
-  -e MCP_BIGQUERY_LOCATION="your-bigquery-location" \ # Optional, defaults to US
-  -e MCP_BIGQUERY_KEY_FILE="/app/key.json" \
-  -v /path/on/your/host/to/key.json:/app/key.json:ro \
-  mcodd/mcp-bigquery-server:latest
-```
-
-**Notes:**
-*   Ensure the path used in `-v ...` points to your actual key file on your host machine.
-*   The path in `-e MCP_BIGQUERY_KEY_FILE` must match the target path inside the container specified in the `-v` flag (e.g., `/app/key.json`).
-
-**4. Stopping the Container:**
-
-Press `Ctrl+D` in the terminal where the container is running to gracefully shut down the server.
-
-**5. Running the Container under Claude Desktop:**
+Start up Docker Desktop, which is necessary to be able to execute the docker commands in the `claude_desktop_config.json` file below.
 
 To use this server with Claude Desktop, you need to configure it in your `claude_desktop_config.json` file. Add an entry under `mcpServers` like the following, ensuring you replace the placeholder values:
 
